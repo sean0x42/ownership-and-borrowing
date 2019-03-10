@@ -20,6 +20,28 @@
 
   <div>
     <h2>Memory Management</h2>
+    <p>Takes place over two steps</p>
+    <ol>
+      <li><strong>Allocate</strong>: request memory from OS</li>
+      <li><strong>Free/Deallocate</strong>: return memory to the OS</li>
+    </ol>
+    <p>Freeing resources is challenging</p>
+  </div>
+
+  <div>
+    <h2>Challenges of Deallocation</h2>
+    <p>What makes deallocation so hard?</p>
+    <ol>
+      <li>Failing to free memory results in <strong>memory leaks</strong></li>
+      <li>Freeing memory too early results in <strong>erroneous
+        behaviour</strong> (use-after-free)</li>
+      <li>Freeing twice results in buggy behaviour</li>
+    </ol>
+    <p>We have to map each allocation to exactly one deallocation.</p>
+  </div>
+
+  <div>
+    <h2>Approaches</h2>
     <p>There are two typical approaches to memory management in modern
       languages.</p>
 
@@ -80,101 +102,253 @@
 }</code></pre>
   </div>
 
-<div><h2 id="stack-and-heap-review">Stack and heap review</h2>
-<p>Stack is smaller, yet faster. You can only push elements of a fixed size to the
-stack. Otherwise it must be sent to the heap.</p>
-<ul>
-<li>Accessing data on the heap is slower because you have to follow a pointer.
-Also due to the principle of locality, modern processors are faster when they
-don&#39;t have to move long distances to retrieve data.</li>
-<li>When you call a function, that function&#39;s parameters are pushed onto the
-stack. When the function leaves scope, it&#39;s parameters are popped off again.</li>
-<li>Once you understand Rust&#39;s ownership features, you won&#39;t need to think about
-the stack and the heap very often.</li>
-</ul>
-</div>
-<div><h2 id="semantics">Semantics</h2>
-<p>When a variable comes into scope, we refer to it as being <em>valid</em>. Once it
-leaves scope, it becomes <em>invalid</em>. </p>
-<pre><code class="language-rust">{
-  let message = &quot;Hello world!&quot;;
-}</code></pre>
-</div>
-<div><p>Note that string literals are hardcoded into the binary, and are therefore
-immutable, yet highly performant. We know the contents of the string at compile
-time. e.g. </p>
-<pre><code class="language-rust">&quot;Hi there! I&#39;m an immutable string literal.&quot;;</code></pre>
-</div>
-<div><p>Rust also has the <code>String</code> type, which is stored on the heap and therefore can
-be made mutable. e.g.</p>
-<pre><code class="language-rust">let mut message = String::from(&quot;Hello world&quot;);</code></pre>
-</div>
-<div><p>So there are two steps two memory management:</p>
-<ol>
-<li>Request memory from OS (alloc)</li>
-<li>Return memory to the OS (free)</li>
-</ol>
-</div>
-<div><p>Not freeing (deallocating) memory results in memory leaks. Freeing too early
-results in invalid references/memory locations. Freeing twice also leads to
-buggy behaviour. So the challenge is this: map every allocation to one - and
-only one dellocation.</p>
-</div>
-<div><p>In Rust (and most programming languages), the allocation occurs when we call a
-constructor. e.g.</p>
-<pre><code class="language-rust">let s = String::from(&quot;Test&quot;); // Alloc occurs here</code></pre>
-</div>
-<div><p>The unique step to Rust, is that once <code>s</code> leaves scope, a unique function called
-<code>#drop()</code> is called.</p>
-</div>
-<div><h2 id="moving-data">Moving data</h2>
-<pre><code class="language-rust">let x = 5;
-let y = x;</code></pre>
-<p>This is because most primitives (or scalar types) implement the <code>Copy</code> trait.
-Any types that have the <code>Copy</code> trait can be copied in this way.</p>
-</div>
-<div><pre><code class="language-rust">let a = String::from(&quot;Hello, world!&quot;);
-let b = a;</code></pre>
-<p>This only copies the pointer, since only values on the stack are copied. We now
-have two pointers to a single string on the heap. However Rust does something
-interesting here.</p>
-<p>Rust now considers <code>a</code> to be invalid. This process may seem like a shallow copy.
-However, because the original variable <code>a</code> is also invalidated, we refer to this
-operation as a move.</p>
-<p>Rust will never automatically create deep copies of data for you.</p>
-</div>
-<div><h2 id="clone">Clone</h2>
-<p>If we do want to deeply clone data on the heap, we can use a common method
-called <code>#clone()</code></p>
-<p>e.g.</p>
-<pre><code class="language-rust">let a = String::from(&quot;Hello, world!&quot;);
-let b = a.clone();
+  <div>
+    <h1>Manipulating Data</h1>
+    <p class="subtitle">A few important operations in Rust</p>
+  </div>
 
-println!(&quot;a = {}, b = {}&quot;, a, b);</code></pre>
-<p>This performs a deep clone, which is obviously more expensive.</p>
-</div>
-<div><h2 id="functions-and-ownership">Functions and Ownership</h2>
-<p>When you pass variables as parameters, they will either <code>move</code> or <code>copy</code> (if
-and only if they have the copy trait).</p>
-<pre><code class="language-rust">fn main() {
-    let x = String::from(&quot;Hello, world!&quot;);
+  <div>
+    <h2>Copy</h2>
+    <p>Each type must be a primitive, or have the <strong><code>Copy</code>
+      trait</strong>.</p>
+    <pre><code class="language-rust">let x = 5;
+let y = x;</code></pre>
+    <p>Two seperate but identical copies on the stack</p>
+  </div>
+
+  <div>
+    <h2>Move</h2>
+    <p>For non-copy types</p>
+    <pre><code class="language-rust">let alpha = String::from(&quot;Hello, world!&quot;);
+let beta = alpha;</code></pre>
+    <p><code>alpha</code> becomes invalid. <strong>The data now belongs to
+      beta</strong></p>
+  </div>
+
+  <div>
+    <h2>Clone</h2>
+    <pre><code class="language-rust">let alpha = String::from(&quot;Hello, world!&quot;);
+let beta = alpha<strong>.clone()</strong>;</code></pre>
+    <p>This performs a <strong>deep clone</strong>, which is more expensive.</p>
+  </div>
+
+  <div>
+    <h2>Summary</h2>
+    <p>Three basic data operations:</p>
+    <ol>
+      <li>Copy</li>
+      <li>Move</li>
+      <li>Clone</li>
+    </ol>
+  </div>
+
+  <div>
+    <h1>Functions &amp; Ownership</h1>
+    <p class="subtitle">How ownership works in funcions</p>
+  </div>
+
+  <div>
+    <h2>Parameters</h2>
+    <p>When you pass variables as parameters they will <strong>either move or
+      copy</strong>.</p>
+    <pre><code class="language-rust">fn main() {
+    let <strong>found = true</strong>;
+    makes_copy(y);
+}
+
+fn makes_copy(found: bool) {
+    println!(&quot;Found: {}&quot;, found);
+}</code></pre>
+    <p><code>found</code> is copied.</p>
+  </div>
+
+  <div>
+    <pre><code class="language-rust">fn main() {
+    let <strong>x = String::from(&quot;Hello, world!&quot;)</strong>;
     takes_ownership(x);
 }
 
 fn takes_ownership(x: String) {
     println!(&quot;{}&quot;, x);
 }</code></pre>
-<p>In this case, <code>x</code> does not have the <code>Copy</code> trait, and so a <code>move</code> is performed,
-and the function takes ownership of the string.</p>
-</div>
-<div><pre><code class="language-rust">fn main() {
-    let y = true;
-    makes_copy(y);
+    <p><code>x</code> is moved and becomes invalid within the scope of
+      <code>main()</code></p>
+  </div>
+
+  <div>
+    <h2>Return Values</h2>
+    <p>You can also <strong>give ownership back</strong> with return values</p>
+    <pre><code class="language-rust">fn main() {
+    let x1 = String::from(&quot;Nan Li&quot;);
+    let x2 = takes_and_gives_back(x1);
+}
+    
+fn takes_and_gives_back(string: String) -> String {
+    return string.push_str(&quot; is my dad!&quot;);
+}</code></pre>
+  </div>
+
+  <div>
+    <h1>References &amp; Borrowing</h1>
+    <p class="subtitle">Because we don't want to own everything</p>
+  </div>
+
+  <div>
+    <h2>References</h2>
+    <p>Use the <strong>reference operator <code>&amp;</code></strong>.</p>
+    <pre><code class="language-rust">fn main() {
+    let message = String::from(&quot;strrrrrring&quot;);
+    let len = borrows(<strong>&amp;message</strong>);
+    println!(&quot;Length of {} is {}&quot;, message, len);
+}
+    
+fn borrows(message: <strong>&amp;String</strong>) -> usize {
+    message.len()
+}</code></pre>
+  </div>
+
+  <div>
+    <pre><code class="language-rust">fn borrows(message: &amp;String) -> usize {
+    message.len()
+}</code></pre>
+    <p>When <code>message</code> goes out of scope, the string is not dropped
+      since <code>message</code> does not have ownership</p>
+  </div>
+
+  <div>
+    <h2>Modifying References</h2>
+    <p>Much like variables, <strong>references are immutable by
+      default</strong>.</p>
+    <pre><code class="language-rust">fn main() {
+    let <strong>mut</strong> s = String::from(&quot;Hello&quot;);
+    change(<strong>&amp;mut</strong> s);
 }
 
-fn makes_copy(y: bool) {
-    println!(&quot;{}&quot;, y);
+fn change(s: <strong>&amp;mut</strong> String) {
+    s.push_str(&quot;, world!&quot;);
 }</code></pre>
-</div>
+  </div>
+
+  <div>
+    <h2>Reader/Writer Pattern</h2>
+    <p>To prevent race conditions, we can either have</p>
+    <ul>
+      <li><strong>Many immutable references</strong> (readers) or</li>
+      <li><strong>One mutable reference</strong> (writer)</li>
+    </ul>
+
+    <p>We cannot have both!</p>
+  </div>
+
+  <div>
+    <p>This is <strong>illegal</strong>. Two borrows, both can write/mutate.</p>
+    <pre><code class="language-rust">let mut s = String::from(&quot;Test&quot;);
+let mut r1 = &amp;mut s;
+let mut r2 = &amp;mut s;
+</code></pre>
+  </div>
+
+  <div>
+    <h2>Sequential Mutation</h2>
+    <p>We can overcome this issue by confining our mutable borrows to
+      <strong>scopes</strong>.</p>
+    <pre><code class="language-rust">let mut s = String::from(&quot;Mutate me!&quot;);
+<strong>{</strong>
+    let mut r1 = &amp;mut s;
+<strong>}</strong>
+
+let mut r2 = &amp;mut s;
+</code></pre>
+  </div>
+
+  <div>
+    <h1>Slices 🔪</h1>
+    <p class="subtitle">Slice to meet you... (sorry)</p>
+  </div>
+
+  <div>
+    <h2>Slices as References</h2>
+    <p>A <em>slice</em> <strong>references part of a collection</strong>.</p>
+    <pre><code class="language-rust">let a = [1, 2, 3, 4, 5];
+let slice = <strong>&amp;a[1..3];</strong></code></pre>
+  </div>
+
+  <div>
+    <h2>String Slices</h2>
+    <p>You may have seen them in Ruby or Python.</p>
+    <pre><code class="language-rust">let s = String::from(&quot;Hello world&quot;);
+  
+let hello = &amp;s[0..5];
+let world = &amp;s[6..=10];</code></pre>
+  </div>
+
+  <div>
+    <p>We can use the <strong>slice type <code>&amp;str</code></strong>.</p>
+    <pre><code class="language-rust">fn first_word(s: &amp;String) -> <strong>&amp;str</strong> {
+    let bytes = s.as_bytes();
+
+    for (i, &amp;item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return <strong>&amp;s[0..i]</strong>;
+        }
+    }
+
+    <strong>&amp;s[..]</strong>
+}</code></pre>
+  </div>
+
+  <div>
+    <h2>Gotcha</h2>
+    <p>This is <strong>illegal</strong></p>
+    <pre><code class="language-rust">let mut s = String::from(&quot;Hello&quot;);
+let word = first_word(&amp;s);
+<strong>s.clear();</strong></code></pre>
+    <p>Remember the reader/writer pattern!</p>
+  </div>
+
+  <div>
+    <h2>Hot Tip 🔥</h2>
+    <p>String literals and the String type can both be represented by a
+      slice.</p>
+    <pre><code class="language-rust">fn main() {
+  let s1 = &quot;Hello&quot;;
+  do_something(<strong>&amp;s1</strong>);
+
+  let s2 = String::from(&quot;World&quot;);
+  do_something(<strong>&amp;s2[...]</strong>);
+}
+
+fn do_something(s: <strong>&amp;str</strong>) -> &amp;str { ... }</code></pre>
+  </div>
+
+  <div>
+    <h2>Summary</h2>
+    <ul>
+      <li><strong>Ownership</strong>: Rust's most powerful feature</li>
+      <li><strong>Reader/writer pattern</strong></li>
+      <li><strong>References</strong>: allow <em>borrowing</em> of values</li>
+      <li><strong>Slices</strong>: reference parts of collections</li>
+    </ul>
+  </div>
+
+  <div>
+    <h2>References</h2>
+    <ul>
+      <li>
+        <a
+          href="https://doc.rust-lang.org/stable/book/ch04-00-understanding-ownership.html"
+          target="_blank">
+          The Rust Programming Language, Chapter 4: Understanding Ownership. <em>Rust community</em>
+        </a>
+      </li>
+      <li>
+        <a
+          href="https://medium.com/@bugaevc/understanding-rust-ownership-borrowing-lifetimes-ff9ee9f79a9c"
+          target="_blank">
+          Understanding Rust: Ownership, Borrowing, Lifetimes. <em>Sergey Bugaev</em>
+        </a>
+      </li>
+    </ul>
+  </div>
 </body>
 </html>
