@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <title>Ownership &amp; Borrowing</title>
+  <link href="big.css" rel="stylesheet" type="text/css" />
+  <link href="highlight.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="custom.css" type="text/css" />
+  <script src="big.js"></script>
+  <script src="highlight.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <div>
+    <h1>Ownership &amp; Borrowing</h1>
+    <p class="subtitle">A <strong>Rust</strong> workshop for Work Integrated
+      Learning.</p>
+  </div>
+
+  <div>
+    <h2>Memory Management</h2>
+    <p>There are two typical approaches to memory management in modern
+      languages.</p>
+
+    <ol>
+      <li><strong>Automatic</strong>: e.g. garbage collector. Found in languages
+        such as Java, Ruby, Python, C#, and Go.</li>
+      <li><strong>Manual</strong>: e.g. explicit allocation and deallocation.
+        Found in C and C++.</li>
+    </ol>
+  </div>
+
+  <div>
+    <h2>Garbage Collectors</h2>
+    <p>Not the perfect solution.</p>
+    <ul>
+      <li>Guaranteed <strong>memory safety</strong></li>
+      <li>Better developer quality of life</li>
+      <li><strong>Slows</strong> your application at runtime</li>
+    </ul>
+  </div>
+
+  <div>
+    <h2>Manual Memory Management</h2>
+    <p>Not the perfect solution.</p>
+    <ul>
+      <li>Substantially <strong>better performance</strong></li>
+      <li>Lower developer quality of life</li>
+      <li>Potentially <strong>dangerous</strong></li>
+    </ul>
+  </div>
+
+  <div>
+    <h2>Introducing Ownership</h2>
+    <p>A different form of automatic memory management, which can be
+      <strong>enforced at compile time</strong>.</p>
+    <ol>
+      <li>Each value has an owner</li>
+      <li>Each value has only one owner at a time</li>
+      <li>When the owner goes out of scope, the value will be dropped</li>
+    </ol>
+  </div>
+
+  <div>
+    <h2>Ownership</h2>
+    <p>A nice middleground.</p>
+    <ul>
+      <li>As <strong>performant</strong> as manual</li>
+      <li>As <strong>safe</strong> as GC</li>
+      <li>Decent developer quality of life</li>
+    </ul>
+  </div>
+
+  <div>
+    <h2>Valid & Invalid</h2>
+    <pre><code class="language-rust">fn main() {
+    let <strong>message</strong> = &quot;Hello world!&quot;;
+    println!(&quot;{}&quot;, message);
+}</code></pre>
+  </div>
+
+<div><h2 id="stack-and-heap-review">Stack and heap review</h2>
+<p>Stack is smaller, yet faster. You can only push elements of a fixed size to the
+stack. Otherwise it must be sent to the heap.</p>
+<ul>
+<li>Accessing data on the heap is slower because you have to follow a pointer.
+Also due to the principle of locality, modern processors are faster when they
+don&#39;t have to move long distances to retrieve data.</li>
+<li>When you call a function, that function&#39;s parameters are pushed onto the
+stack. When the function leaves scope, it&#39;s parameters are popped off again.</li>
+<li>Once you understand Rust&#39;s ownership features, you won&#39;t need to think about
+the stack and the heap very often.</li>
+</ul>
+</div>
+<div><h2 id="semantics">Semantics</h2>
+<p>When a variable comes into scope, we refer to it as being <em>valid</em>. Once it
+leaves scope, it becomes <em>invalid</em>. </p>
+<pre><code class="language-rust">{
+  let message = &quot;Hello world!&quot;;
+}</code></pre>
+</div>
+<div><p>Note that string literals are hardcoded into the binary, and are therefore
+immutable, yet highly performant. We know the contents of the string at compile
+time. e.g. </p>
+<pre><code class="language-rust">&quot;Hi there! I&#39;m an immutable string literal.&quot;;</code></pre>
+</div>
+<div><p>Rust also has the <code>String</code> type, which is stored on the heap and therefore can
+be made mutable. e.g.</p>
+<pre><code class="language-rust">let mut message = String::from(&quot;Hello world&quot;);</code></pre>
+</div>
+<div><p>So there are two steps two memory management:</p>
+<ol>
+<li>Request memory from OS (alloc)</li>
+<li>Return memory to the OS (free)</li>
+</ol>
+</div>
+<div><p>Not freeing (deallocating) memory results in memory leaks. Freeing too early
+results in invalid references/memory locations. Freeing twice also leads to
+buggy behaviour. So the challenge is this: map every allocation to one - and
+only one dellocation.</p>
+</div>
+<div><p>In Rust (and most programming languages), the allocation occurs when we call a
+constructor. e.g.</p>
+<pre><code class="language-rust">let s = String::from(&quot;Test&quot;); // Alloc occurs here</code></pre>
+</div>
+<div><p>The unique step to Rust, is that once <code>s</code> leaves scope, a unique function called
+<code>#drop()</code> is called.</p>
+</div>
+<div><h2 id="moving-data">Moving data</h2>
+<pre><code class="language-rust">let x = 5;
+let y = x;</code></pre>
+<p>This is because most primitives (or scalar types) implement the <code>Copy</code> trait.
+Any types that have the <code>Copy</code> trait can be copied in this way.</p>
+</div>
+<div><pre><code class="language-rust">let a = String::from(&quot;Hello, world!&quot;);
+let b = a;</code></pre>
+<p>This only copies the pointer, since only values on the stack are copied. We now
+have two pointers to a single string on the heap. However Rust does something
+interesting here.</p>
+<p>Rust now considers <code>a</code> to be invalid. This process may seem like a shallow copy.
+However, because the original variable <code>a</code> is also invalidated, we refer to this
+operation as a move.</p>
+<p>Rust will never automatically create deep copies of data for you.</p>
+</div>
+<div><h2 id="clone">Clone</h2>
+<p>If we do want to deeply clone data on the heap, we can use a common method
+called <code>#clone()</code></p>
+<p>e.g.</p>
+<pre><code class="language-rust">let a = String::from(&quot;Hello, world!&quot;);
+let b = a.clone();
+
+println!(&quot;a = {}, b = {}&quot;, a, b);</code></pre>
+<p>This performs a deep clone, which is obviously more expensive.</p>
+</div>
+<div><h2 id="functions-and-ownership">Functions and Ownership</h2>
+<p>When you pass variables as parameters, they will either <code>move</code> or <code>copy</code> (if
+and only if they have the copy trait).</p>
+<pre><code class="language-rust">fn main() {
+    let x = String::from(&quot;Hello, world!&quot;);
+    takes_ownership(x);
+}
+
+fn takes_ownership(x: String) {
+    println!(&quot;{}&quot;, x);
+}</code></pre>
+<p>In this case, <code>x</code> does not have the <code>Copy</code> trait, and so a <code>move</code> is performed,
+and the function takes ownership of the string.</p>
+</div>
+<div><pre><code class="language-rust">fn main() {
+    let y = true;
+    makes_copy(y);
+}
+
+fn makes_copy(y: bool) {
+    println!(&quot;{}&quot;, y);
+}</code></pre>
+</div>
+</body>
+</html>

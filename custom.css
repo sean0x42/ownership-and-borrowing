@@ -1,0 +1,47 @@
+@import url('https://rsms.me/inter/inter.css');
+
+:root {
+  --background-colour: hsl(286.3, 3%, 15%);
+  --lighter-background-colour: hsl(286.3, 4%, 18%);
+  --text-colour: hsl(286.3, 15%, 98%);
+  --highlight-colour: hsl(286.3, 66.3%, 44%);
+}
+
+body {
+  background: var(--background-colour);
+  border: 6px solid var(--highlight-colour);
+  box-sizing: border-box;
+  color: var(--text-colour);
+  font-family: "Inter", sans-serif;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0.4em 0;
+}
+
+h1 {
+  line-height: 1.1;
+  text-align: center;
+}
+
+p {
+  line-height: 1.4;
+}
+
+b,
+strong {
+  color: var(--highlight-colour);
+}
+
+pre {
+  background: var(--lighter-background-colour);
+  border-radius: 0.1em;
+  padding: 0.2em;
+}
+
+.subtitle {
+  text-align: center;
+}
