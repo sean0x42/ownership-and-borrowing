@@ -5,17 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
   <title>Ownership &amp; Borrowing</title>
   <link href="big.css" rel="stylesheet" type="text/css" />
-  <link href="highlight.css" rel="stylesheet" type="text/css" />
   <link rel="stylesheet" href="custom.css" type="text/css" />
   <script src="big.js"></script>
-  <script src="highlight.js"></script>
-  <script>hljs.initHighlightingOnLoad();</script>
 </head>
 <body>
   <div>
     <h1>Ownership &amp; Borrowing</h1>
     <p class="subtitle">A <strong>Rust</strong> workshop for Work Integrated
       Learning.</p>
+    <p class="author">Sean Bailey</p>
+  </div>
+
+  <div>
+    <h2>Summary</h2>
+    <ul>
+      <li><strong>Ownership</strong>: Rust's most powerful feature</li>
+      <li><strong>Reader/writer pattern</strong></li>
+      <li><strong>References</strong>: allow <em>borrowing</em> of values</li>
+      <li><strong>Slices</strong>: reference parts of collections</li>
+    </ul>
   </div>
 
   <div>
@@ -79,24 +87,25 @@
       <strong>enforced at compile time</strong>.</p>
     <ol>
       <li>Each value has an owner</li>
-      <li>Each value has only one owner at a time</li>
+      <li>The owner may be transfered, but there will always be exactly one</li>
       <li>When the owner goes out of scope, the value will be dropped</li>
     </ol>
   </div>
 
   <div>
-    <h2>Ownership</h2>
+    <h2>Pros of Ownership</h2>
     <p>A nice middleground.</p>
     <ul>
       <li>As <strong>performant</strong> as manual</li>
       <li>As <strong>safe</strong> as GC</li>
       <li>Decent developer quality of life</li>
+      <li>Encourages good practices</li>
     </ul>
   </div>
 
   <div>
     <h2>Valid & Invalid</h2>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let <strong>message</strong> = &quot;Hello world!&quot;;
     println!(&quot;{}&quot;, message);
 }</code></pre>
@@ -109,17 +118,16 @@
 
   <div>
     <h2>Copy</h2>
-    <p>Each type must be a primitive, or have the <strong><code>Copy</code>
-      trait</strong>.</p>
-    <pre><code class="language-rust">let x = 5;
-let y = x;</code></pre>
+    <p>Each type must have the <strong><code>Copy</code> trait</strong>.</p>
+    <pre><code class="rust">let original = 8;
+let copy = original;</code></pre>
     <p>Two seperate but identical copies on the stack</p>
   </div>
 
   <div>
     <h2>Move</h2>
-    <p>For non-copy types</p>
-    <pre><code class="language-rust">let alpha = String::from(&quot;Hello, world!&quot;);
+    <p>For non-copy types. Move is a <strong>transfer of ownership</strong></p>
+    <pre><code class="rust">let alpha = String::from(&quot;Hello, world!&quot;);
 let beta = alpha;</code></pre>
     <p><code>alpha</code> becomes invalid. <strong>The data now belongs to
       beta</strong></p>
@@ -127,7 +135,7 @@ let beta = alpha;</code></pre>
 
   <div>
     <h2>Clone</h2>
-    <pre><code class="language-rust">let alpha = String::from(&quot;Hello, world!&quot;);
+    <pre><code class="rust">let alpha = String::from(&quot;Hello, world!&quot;);
 let beta = alpha<strong>.clone()</strong>;</code></pre>
     <p>This performs a <strong>deep clone</strong>, which is more expensive.</p>
   </div>
@@ -151,9 +159,9 @@ let beta = alpha<strong>.clone()</strong>;</code></pre>
     <h2>Parameters</h2>
     <p>When you pass variables as parameters they will <strong>either move or
       copy</strong>.</p>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let <strong>found = true</strong>;
-    makes_copy(y);
+    makes_copy(found);
 }
 
 fn makes_copy(found: bool) {
@@ -163,7 +171,7 @@ fn makes_copy(found: bool) {
   </div>
 
   <div>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let <strong>x = String::from(&quot;Hello, world!&quot;)</strong>;
     takes_ownership(x);
 }
@@ -178,7 +186,7 @@ fn takes_ownership(x: String) {
   <div>
     <h2>Return Values</h2>
     <p>You can also <strong>give ownership back</strong> with return values</p>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let x1 = String::from(&quot;Nan Li&quot;);
     let x2 = takes_and_gives_back(x1);
 }
@@ -196,7 +204,7 @@ fn takes_and_gives_back(string: String) -> String {
   <div>
     <h2>References</h2>
     <p>Use the <strong>reference operator <code>&amp;</code></strong>.</p>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let message = String::from(&quot;strrrrrring&quot;);
     let len = borrows(<strong>&amp;message</strong>);
     println!(&quot;Length of {} is {}&quot;, message, len);
@@ -208,7 +216,7 @@ fn borrows(message: <strong>&amp;String</strong>) -> usize {
   </div>
 
   <div>
-    <pre><code class="language-rust">fn borrows(message: &amp;String) -> usize {
+    <pre><code class="rust">fn borrows(message: &amp;String) -> usize {
     message.len()
 }</code></pre>
     <p>When <code>message</code> goes out of scope, the string is not dropped
@@ -219,7 +227,7 @@ fn borrows(message: <strong>&amp;String</strong>) -> usize {
     <h2>Modifying References</h2>
     <p>Much like variables, <strong>references are immutable by
       default</strong>.</p>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
     let <strong>mut</strong> s = String::from(&quot;Hello&quot;);
     change(<strong>&amp;mut</strong> s);
 }
@@ -242,7 +250,7 @@ fn change(s: <strong>&amp;mut</strong> String) {
 
   <div>
     <p>This is <strong>illegal</strong>. Two borrows, both can write/mutate.</p>
-    <pre><code class="language-rust">let mut s = String::from(&quot;Test&quot;);
+    <pre><code class="rust">let mut s = String::from(&quot;Test&quot;);
 let mut r1 = &amp;mut s;
 let mut r2 = &amp;mut s;
 </code></pre>
@@ -252,7 +260,7 @@ let mut r2 = &amp;mut s;
     <h2>Sequential Mutation</h2>
     <p>We can overcome this issue by confining our mutable borrows to
       <strong>scopes</strong>.</p>
-    <pre><code class="language-rust">let mut s = String::from(&quot;Mutate me!&quot;);
+    <pre><code class="rust">let mut s = String::from(&quot;Mutate me!&quot;);
 <strong>{</strong>
     let mut r1 = &amp;mut s;
 <strong>}</strong>
@@ -269,22 +277,22 @@ let mut r2 = &amp;mut s;
   <div>
     <h2>Slices as References</h2>
     <p>A <em>slice</em> <strong>references part of a collection</strong>.</p>
-    <pre><code class="language-rust">let a = [1, 2, 3, 4, 5];
+    <pre><code class="rust">let a = [1, 2, 3, 4, 5];
 let slice = <strong>&amp;a[1..3];</strong></code></pre>
   </div>
 
   <div>
     <h2>String Slices</h2>
     <p>You may have seen them in Ruby or Python.</p>
-    <pre><code class="language-rust">let s = String::from(&quot;Hello world&quot;);
+    <pre><code class="rust">let s = String::from(&quot;Hello world&quot;);
   
-let hello = &amp;s[0..5];
-let world = &amp;s[6..=10];</code></pre>
+let hello = <strong>&amp;s[0..5]</strong>;
+let world = <strong>&amp;s[6..=10]</strong>;</code></pre>
   </div>
 
   <div>
     <p>We can use the <strong>slice type <code>&amp;str</code></strong>.</p>
-    <pre><code class="language-rust">fn first_word(s: &amp;String) -> <strong>&amp;str</strong> {
+    <pre><code class="rust">fn first_word(s: &amp;String) -> <strong>&amp;str</strong> {
     let bytes = s.as_bytes();
 
     for (i, &amp;item) in bytes.iter().enumerate() {
@@ -300,7 +308,7 @@ let world = &amp;s[6..=10];</code></pre>
   <div>
     <h2>Gotcha</h2>
     <p>This is <strong>illegal</strong></p>
-    <pre><code class="language-rust">let mut s = String::from(&quot;Hello&quot;);
+    <pre><code class="rust">let mut s = String::from(&quot;Hello&quot;);
 let word = first_word(&amp;s);
 <strong>s.clear();</strong></code></pre>
     <p>Remember the reader/writer pattern!</p>
@@ -310,7 +318,7 @@ let word = first_word(&amp;s);
     <h2>Hot Tip 🔥</h2>
     <p>String literals and the String type can both be represented by a
       slice.</p>
-    <pre><code class="language-rust">fn main() {
+    <pre><code class="rust">fn main() {
   let s1 = &quot;Hello&quot;;
   do_something(<strong>&amp;s1</strong>);
 
@@ -332,7 +340,7 @@ fn do_something(s: <strong>&amp;str</strong>) -> &amp;str { ... }</code></pre>
   </div>
 
   <div>
-    <h2>References</h2>
+    <h2>References &amp; Further Reading</h2>
     <ul>
       <li>
         <a
@@ -346,6 +354,13 @@ fn do_something(s: <strong>&amp;str</strong>) -> &amp;str { ... }</code></pre>
           href="https://medium.com/@bugaevc/understanding-rust-ownership-borrowing-lifetimes-ff9ee9f79a9c"
           target="_blank">
           Understanding Rust: Ownership, Borrowing, Lifetimes. <em>Sergey Bugaev</em>
+        </a>
+      </li>
+      <li>
+        <a
+          href="https://blog.skylight.io/rust-means-never-having-to-close-a-socket/"
+          target="_blank">
+          Rust Means Never Having to Close a Socket. <em>Yehuda Katz</em>
         </a>
       </li>
     </ul>

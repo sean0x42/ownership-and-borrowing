@@ -9,7 +9,7 @@
 
 body {
   background: var(--background-colour);
-  border: 6px solid var(--highlight-colour);
+  /* border: 6px solid var(--highlight-colour); */
   box-sizing: border-box;
   color: var(--text-colour);
   font-family: "Inter", sans-serif;
@@ -69,6 +69,12 @@ a {
 
 a em {
   font-style: italic;
+}
+
+.author {
+  font-size: 75%;
+  margin-top: 3em;
+  text-align: center;
 }
 
 .subtitle {
